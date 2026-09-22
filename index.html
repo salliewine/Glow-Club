@@ -4,40 +4,75 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 <title>Glow Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 <style>
   :root {
-    --bg: #faf8f6;
+    --bg: #fdf3ef;
     --card: #ffffff;
-    --border: #e9e4de;
-    --text: #2c2c2a;
-    --text-muted: #8a8680;
-    --accent: #d4537e;
-    --accent-bg: #fbeaf0;
+    --border: #f3e2de;
+    --ink: #2a1b22;
+    --ink-soft: #8b7480;
+    --rose: #d6456c;
+    --rose-deep: #ad3856;
+    --gold: #f0a868;
+    --glow: radial-gradient(120% 100% at 20% 0%, #fde3d4 0%, #fbd2dc 45%, #f6c6d9 75%, transparent 100%);
+    --pill-gradient: linear-gradient(135deg, var(--rose) 0%, var(--rose-deep) 100%);
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     background: var(--bg);
-    color: var(--text);
+    color: var(--ink);
     -webkit-font-smoothing: antialiased;
   }
   #app {
     max-width: 420px;
     margin: 0 auto;
     min-height: 100vh;
-    padding: 1.25rem 1rem 5rem;
+    padding: 0 1rem 5rem;
+  }
+  .glow-header {
+    background: var(--glow);
+    margin: 0 -1rem 1.5rem;
+    padding: 2.25rem 1rem 1.5rem;
+    border-radius: 0 0 28px 28px;
+    animation: glow-in 0.6s ease-out;
+  }
+  @keyframes glow-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .wordmark {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 600;
+    font-optical-sizing: auto;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .tagline {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin: 0;
   }
   .topbar {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
+    align-items: flex-end;
   }
   .greeting p { margin: 0; }
-  .greeting .hi { font-size: 15px; font-weight: 600; }
-  .greeting .sub { font-size: 13px; color: var(--text-muted); }
+  .greeting .hi {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    font-weight: 500;
+    font-optical-sizing: auto;
+    letter-spacing: -0.01em;
+  }
+  .greeting .sub { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
   .credits-pill {
     display: flex;
     align-items: center;
@@ -45,14 +80,17 @@
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 20px;
-    padding: 6px 12px;
+    padding: 7px 14px;
     font-size: 13px;
     font-weight: 600;
+    box-shadow: 0 2px 10px rgba(214, 69, 108, 0.08);
+    white-space: nowrap;
   }
   .section-label {
     font-size: 13px;
-    color: var(--text-muted);
+    color: var(--ink-soft);
     margin: 0 0 10px;
+    font-weight: 500;
   }
   .grid {
     display: grid;
@@ -63,67 +101,102 @@
   .edit-card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: 16px;
     padding: 14px;
     text-align: left;
     cursor: pointer;
     font-family: inherit;
+    transition: transform 0.15s ease;
   }
-  .edit-card:active { transform: scale(0.98); }
-  .edit-card.featured { border: 2px solid var(--accent); }
-  .edit-card .name { font-size: 14px; font-weight: 600; margin: 10px 0 2px; }
-  .edit-card .cost { font-size: 12px; color: var(--text-muted); }
+  .edit-card:active { transform: scale(0.97); }
+  .edit-card.featured {
+    position: relative;
+    border: none;
+    background:
+      linear-gradient(var(--card), var(--card)) padding-box,
+      linear-gradient(135deg, var(--rose), var(--gold)) border-box;
+    border: 2px solid transparent;
+  }
+  .icon-roundel {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    margin-bottom: 10px;
+  }
+  .edit-card .name { font-size: 14px; font-weight: 600; margin: 0 0 2px; }
+  .edit-card .cost { font-size: 12px; color: var(--ink-soft); }
   .upload-zone {
-    border: 1px dashed var(--border);
-    border-radius: 14px;
+    border: 1.5px dashed var(--border);
+    border-radius: 16px;
     padding: 2rem 1rem;
     text-align: center;
-    color: var(--text-muted);
+    color: var(--ink-soft);
     font-size: 14px;
     cursor: pointer;
+    background: var(--card);
+    transition: border-color 0.15s ease;
   }
-  .upload-zone img { max-width: 100%; border-radius: 10px; }
+  .upload-zone:active { border-color: var(--rose); }
+  .upload-zone img { max-width: 100%; border-radius: 12px; }
   .btn {
     width: 100%;
     padding: 14px;
-    border-radius: 12px;
+    border-radius: 100px;
     border: none;
-    background: var(--accent);
+    background: var(--pill-gradient);
     color: white;
+    font-family: inherit;
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     margin-top: 1rem;
+    box-shadow: 0 4px 14px rgba(214, 69, 108, 0.28);
+    transition: transform 0.12s ease;
   }
-  .btn:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { background: var(--border); color: var(--ink-soft); cursor: not-allowed; box-shadow: none; }
   .btn-secondary {
     background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text);
+    border: 1.5px solid var(--border);
+    color: var(--ink);
+    box-shadow: none;
   }
   .status-banner {
     font-size: 13px;
     padding: 10px 12px;
-    border-radius: 10px;
+    border-radius: 12px;
     margin-bottom: 1rem;
   }
   .status-banner.error { background: #fcebeb; color: #a32d2d; }
-  .status-banner.processing { background: var(--accent-bg); color: var(--accent); }
+  .status-banner.processing { background: #fbeaf0; color: var(--rose-deep); }
   .back-link {
     font-size: 13px;
-    color: var(--text-muted);
+    color: var(--ink-soft);
     margin-bottom: 1rem;
     cursor: pointer;
   }
   #auth-screen input {
     width: 100%;
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
+    padding: 13px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
     margin-bottom: 10px;
     font-size: 15px;
+    font-family: inherit;
+    background: var(--card);
   }
+  #auth-screen input:focus { outline: none; border-color: var(--rose); }
   .hidden { display: none !important; }
+  #edit-screen-title {
+    font-family: 'Fraunces', serif;
+    font-size: 21px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
 </style>
 </head>
 <body>
@@ -132,7 +205,10 @@
 
   <!-- AUTH SCREEN -->
   <div id="auth-screen">
-    <h2 style="font-size:20px; margin-bottom: 1rem;">Glow Club</h2>
+    <div class="glow-header">
+      <p class="wordmark">Glow Club</p>
+      <p class="tagline">AI photo editing, made simple.</p>
+    </div>
     <input id="auth-email" type="email" placeholder="Email" />
     <input id="auth-password" type="password" placeholder="Password" />
     <button class="btn" id="sign-in-btn">Sign in</button>
@@ -142,18 +218,20 @@
 
   <!-- HOME SCREEN -->
   <div id="home-screen" class="hidden">
-    <div class="topbar">
-      <div class="greeting">
-        <p class="hi" id="greeting-name">Hi there</p>
-        <p class="sub">Glow club member</p>
-      </div>
-      <div class="credits-pill">
-        <span id="credit-count">–</span> credits
+    <div class="glow-header">
+      <div class="topbar">
+        <div class="greeting">
+          <p class="hi" id="greeting-name">Hi there</p>
+          <p class="sub">Glow club member</p>
+        </div>
+        <div class="credits-pill">
+          <span id="credit-count">–</span> credits
+        </div>
       </div>
     </div>
 
-    <button class="btn" id="subscribe-btn" style="margin-bottom: 1.25rem;">
-      Subscribe — $5.99/week
+    <button class="btn" id="subscribe-btn" style="margin-top: 0; margin-bottom: 1.25rem;">
+      Subscribe — $2.99/week
     </button>
 
     <p class="section-label">Create</p>
@@ -209,7 +287,7 @@
   // ============================================
   const SUPABASE_URL = 'https://rbgmftdosmmnlcznorog.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJiZ21mdGRvc21tbmxjem5vcm9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2NjQ5MzcsImV4cCI6MjEwNTI0MDkzN30.CDMtTKH2RuIbN2rsz3GWR3SWe0Je8MDZc4JWbKeWvWA';
-  const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/test_9B66oHfyO4E1bP41tcgfu00';
+  const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/test_fZu9AT5Ye7QdaL09ZIgfu01';
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -217,6 +295,11 @@
   const ICONS = {
     glow_me: '✨', touch_up: '🪄', background: '🖼️',
     style_me: '👗', fix_it: '🔧', make_me_viral: '🔥'
+  };
+  // Tint per category — informs at a glance, doesn't just decorate
+  const TINTS = {
+    glow_me: '#fdf0d9', touch_up: '#fce4ea', background: '#dcefe8',
+    style_me: '#ede3f7', fix_it: '#fbe6d2', make_me_viral: '#fcd9cf'
   };
 
   let currentUser = null;
@@ -297,7 +380,7 @@
       const card = document.createElement('button');
       card.className = 'edit-card' + (type.id === 'make_me_viral' ? ' featured' : '');
       card.innerHTML = `
-        <div style="font-size:20px;">${ICONS[type.id] || '📷'}</div>
+        <div class="icon-roundel" style="background:${TINTS[type.id] || '#f3e2de'};">${ICONS[type.id] || '📷'}</div>
         <p class="name">${type.label}</p>
         <p class="cost">${type.credit_cost} credit${type.credit_cost > 1 ? 's' : ''}</p>
       `;
