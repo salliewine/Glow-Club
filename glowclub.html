@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Glow Club</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<style>
+  :root {
+    --bg: #faf8f6;
+    --card: #ffffff;
+    --border: #e9e4de;
+    --text: #2c2c2a;
+    --text-muted: #8a8680;
+    --accent: #d4537e;
+    --accent-bg: #fbeaf0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  #app {
+    max-width: 420px;
+    margin: 0 auto;
+    min-height: 100vh;
+    padding: 1.25rem 1rem 5rem;
+  }
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .greeting p { margin: 0; }
+  .greeting .hi { font-size: 15px; font-weight: 600; }
+  .greeting .sub { font-size: 13px; color: var(--text-muted); }
+  .credits-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .section-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0 0 10px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .edit-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .edit-card:active { transform: scale(0.98); }
+  .edit-card.featured { border: 2px solid var(--accent); }
+  .edit-card .name { font-size: 14px; font-weight: 600; margin: 10px 0 2px; }
+  .edit-card .cost { font-size: 12px; color: var(--text-muted); }
+  .upload-zone {
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .upload-zone img { max-width: 100%; border-radius: 10px; }
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 1rem;
+  }
+  .btn:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; }
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .status-banner {
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+  }
+  .status-banner.error { background: #fcebeb; color: #a32d2d; }
+  .status-banner.processing { background: var(--accent-bg); color: var(--accent); }
+  .back-link {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    cursor: pointer;
+  }
+  #auth-screen input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+    font-size: 15px;
+  }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- AUTH SCREEN -->
+  <div id="auth-screen">
+    <h2 style="font-size:20px; margin-bottom: 1rem;">Glow Club</h2>
+    <input id="auth-email" type="email" placeholder="Email" />
+    <input id="auth-password" type="password" placeholder="Password" />
+    <button class="btn" id="sign-in-btn">Sign in</button>
+    <button class="btn btn-secondary" id="sign-up-btn">Create account</button>
+    <p id="auth-error" class="status-banner error hidden"></p>
+  </div>
+
+  <!-- HOME SCREEN -->
+  <div id="home-screen" class="hidden">
+    <div class="topbar">
+      <div class="greeting">
+        <p class="hi" id="greeting-name">Hi there</p>
+        <p class="sub">Glow club member</p>
+      </div>
+      <div class="credits-pill">
+        <span id="credit-count">–</span> credits
+      </div>
+    </div>
+
+    <button class="btn" id="subscribe-btn" style="margin-bottom: 1.25rem;">
+      Subscribe — $5.99/week
+    </button>
+
+    <p class="section-label">Create</p>
+    <div class="grid" id="edit-type-grid"></div>
+  </div>
+
+  <!-- UPLOAD / EDIT SCREEN -->
+  <div id="edit-screen" class="hidden">
+    <p class="back-link" id="back-to-home">&larr; Back</p>
+    <h3 id="edit-screen-title" style="margin-bottom: 4px;"></h3>
+    <p class="section-label" id="edit-screen-cost"></p>
+
+    <div id="status-area"></div>
+
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="file-input" accept="image/*" style="display:none" />
+      <img id="preview-img" style="display:none; max-width:100%; border-radius:10px;" alt="Preview" />
+      <span id="upload-zone-text">Tap to upload a photo</span>
+    </div>
+
+    <button class="btn" id="submit-edit-btn" disabled>Create</button>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  window.addEventListener('error', function (e) {
+    console.error('Runtime error:', e.message, e.filename, e.lineno);
+    const authScreen = document.getElementById('auth-screen');
+    if (authScreen && !authScreen.classList.contains('hidden')) {
+      const el = document.getElementById('auth-error');
+      if (el) {
+        el.textContent = 'Error: ' + (e.message || 'unknown error') + ' — check console for details.';
+        el.classList.remove('hidden');
+        el.classList.add('error');
+      }
+    }
+  });
+
+  if (typeof window.supabase === 'undefined') {
+    const el = document.getElementById('auth-error');
+    if (el) {
+      el.textContent = 'Supabase library failed to load from CDN — check your network/ad-blocker and reload.';
+      el.classList.remove('hidden');
+      el.classList.add('error');
+    }
+    return;
+  }
+
+  // ============================================
+  // CONFIG — replace with your project values
+  // ============================================
+  const SUPABASE_URL = 'https://rbgmftdosmmnlcznorog.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJiZ21mdGRvc21tbmxjem5vcm9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2NjQ5MzcsImV4cCI6MjEwNTI0MDkzN30.CDMtTKH2RuIbN2rsz3GWR3SWe0Je8MDZc4JWbKeWvWA';
+  const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/test_9B66oHfyO4E1bP41tcgfu00';
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Fallback icon glyphs per edit type id — swap for real icons/images later
+  const ICONS = {
+    glow_me: '✨', touch_up: '🪄', background: '🖼️',
+    style_me: '👗', fix_it: '🔧', make_me_viral: '🔥'
+  };
+
+  let currentUser = null;
+  let editTypes = [];
+  let selectedEditType = null;
+  let selectedFile = null;
+
+  const $ = (id) => document.getElementById(id);
+
+  // ============================================
+  // AUTH
+  // ============================================
+  $('sign-in-btn').addEventListener('click', async () => {
+    const email = $('auth-email').value.trim();
+    const password = $('auth-password').value;
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) return showAuthError(error.message);
+    onAuthed();
+  });
+
+  $('sign-up-btn').addEventListener('click', async () => {
+    const email = $('auth-email').value.trim();
+    const password = $('auth-password').value;
+    const { error } = await sb.auth.signUp({ email, password });
+    if (error) return showAuthError(error.message);
+    showAuthError('Check your email to confirm your account.', false);
+  });
+
+  function showAuthError(msg, isError = true) {
+    const el = $('auth-error');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    el.classList.toggle('error', isError);
+  }
+
+  async function checkExistingSession() {
+    const { data } = await sb.auth.getSession();
+    if (data.session) onAuthed();
+  }
+
+  function onAuthed() {
+    sb.auth.getUser().then(({ data }) => {
+      currentUser = data.user;
+      $('greeting-name').textContent = 'Hi ' + (currentUser.email.split('@')[0]);
+      $('auth-screen').classList.add('hidden');
+      $('home-screen').classList.remove('hidden');
+      loadEditTypes();
+      loadCreditBalance();
+    });
+  }
+
+  // ============================================
+  // SUBSCRIBE — sends the user to Stripe with their id attached,
+  // so the stripe-webhook can match the payment back to this account
+  // ============================================
+  $('subscribe-btn').addEventListener('click', () => {
+    if (!currentUser) return;
+    const url = `${STRIPE_PAYMENT_LINK}?client_reference_id=${currentUser.id}`;
+    window.open(url, '_blank');
+  });
+
+  // ============================================
+  // HOME SCREEN — load edit types + credit balance
+  // ============================================
+  async function loadEditTypes() {
+    const { data, error } = await sb
+      .from('edit_types')
+      .select('*')
+      .eq('is_active', true)
+      .order('credit_cost');
+
+    if (error || !data) return;
+    editTypes = data;
+
+    const grid = $('edit-type-grid');
+    grid.innerHTML = '';
+    data.forEach((type) => {
+      const card = document.createElement('button');
+      card.className = 'edit-card' + (type.id === 'make_me_viral' ? ' featured' : '');
+      card.innerHTML = `
+        <div style="font-size:20px;">${ICONS[type.id] || '📷'}</div>
+        <p class="name">${type.label}</p>
+        <p class="cost">${type.credit_cost} credit${type.credit_cost > 1 ? 's' : ''}</p>
+      `;
+      card.addEventListener('click', () => openEditScreen(type));
+      grid.appendChild(card);
+    });
+  }
+
+  async function loadCreditBalance() {
+    const { data, error } = await sb
+      .from('credit_balances')
+      .select('balance')
+      .eq('user_id', currentUser.id)
+      .single();
+
+    if (!error && data) $('credit-count').textContent = data.balance;
+  }
+
+  // ============================================
+  // EDIT SCREEN — upload + submit
+  // ============================================
+  function openEditScreen(type) {
+    selectedEditType = type;
+    selectedFile = null;
+    $('edit-screen-title').textContent = type.label;
+    $('edit-screen-cost').textContent = `${type.credit_cost} credit${type.credit_cost > 1 ? 's' : ''}`;
+    $('status-area').innerHTML = '';
+    $('upload-zone-text').textContent = 'Tap to upload a photo';
+    $('upload-zone-text').style.display = 'block';
+    $('preview-img').style.display = 'none';
+    $('preview-img').src = '';
+    $('file-input').value = '';
+    $('submit-edit-btn').textContent = 'Create';
+    $('submit-edit-btn').disabled = true;
+    $('home-screen').classList.add('hidden');
+    $('edit-screen').classList.remove('hidden');
+  }
+
+  $('back-to-home').addEventListener('click', () => {
+    $('edit-screen').classList.add('hidden');
+    $('home-screen').classList.remove('hidden');
+    loadCreditBalance();
+  });
+
+  $('upload-zone').addEventListener('click', () => $('file-input').click());
+
+  $('file-input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      $('preview-img').src = ev.target.result;
+      $('preview-img').style.display = 'block';
+      $('upload-zone-text').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+    $('submit-edit-btn').disabled = false;
+  });
+
+  $('submit-edit-btn').addEventListener('click', async () => {
+    if (!selectedFile || !selectedEditType) return;
+
+    setStatus('processing', 'Uploading photo...');
+    $('submit-edit-btn').disabled = true;
+
+    try {
+      // 1. Upload the original photo to Supabase Storage
+      const path = `${currentUser.id}/${Date.now()}-${selectedFile.name}`;
+      const { error: uploadErr } = await sb.storage
+        .from('photos')
+        .upload(path, selectedFile);
+
+      if (uploadErr) throw new Error('Upload failed: ' + uploadErr.message);
+
+      // 2. Create the uploads row
+      const { data: uploadRow, error: uploadRowErr } = await sb
+        .from('uploads')
+        .insert({ user_id: currentUser.id, storage_path: path })
+        .select()
+        .single();
+
+      if (uploadRowErr) throw new Error('Could not save upload record');
+
+      // 3. Call the process-edit Edge Function — this deducts
+      //    credits and kicks off the Replicate job server-side
+      setStatus('processing', 'Working on your photo...');
+
+      const { data: sessionData } = await sb.auth.getSession();
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/process-edit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({
+          user_id: currentUser.id,
+          upload_id: uploadRow.id,
+          edit_type_id: selectedEditType.id,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.error || 'Something went wrong');
+      }
+
+      setStatus('processing', 'Your edit is processing — check back in a moment.');
+      pollForResult(result.edit_id);
+
+    } catch (err) {
+      setStatus('error', err.message);
+      $('submit-edit-btn').disabled = false;
+    }
+  });
+
+  function setStatus(type, message) {
+    $('status-area').innerHTML = `<p class="status-banner ${type}">${message}</p>`;
+  }
+
+  // Polls the edits table until the Replicate webhook marks it
+  // completed or failed. Swap for realtime subscription if preferred.
+  function pollForResult(editId) {
+    const interval = setInterval(async () => {
+      const { data, error } = await sb
+        .from('edits')
+        .select('status, result_storage_path, error_message')
+        .eq('id', editId)
+        .single();
+
+      if (error || !data) return;
+
+      if (data.status === 'completed') {
+        clearInterval(interval);
+        const { data: urlData, error: urlError } = await sb.storage
+          .from('results')
+          .createSignedUrl(data.result_storage_path, 3600); // valid 1 hour
+        if (urlError || !urlData) {
+          setStatus('error', 'Edit finished, but the result could not be loaded.');
+          $('submit-edit-btn').disabled = false;
+          return;
+        }
+        $('preview-img').src = urlData.signedUrl;
+        $('preview-img').style.display = 'block';
+        $('upload-zone-text').style.display = 'none';
+        setStatus('processing', 'Done! ✨');
+        $('submit-edit-btn').textContent = 'Create another';
+        $('submit-edit-btn').disabled = false;
+      } else if (data.status === 'failed') {
+        clearInterval(interval);
+        setStatus('error', data.error_message || 'Edit failed — credits refunded.');
+        $('submit-edit-btn').disabled = false;
+      }
+    }, 2500);
+  }
+
+  checkExistingSession();
+})();
+</script>
+
+</body>
+</html>
